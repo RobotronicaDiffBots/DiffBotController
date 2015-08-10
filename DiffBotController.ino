@@ -1,7 +1,7 @@
 #import <math.h>
 
 #define remoteID 3 //polled control remote ID
-#define robotID 16 //direct control robot ID
+#define robotID 33 //direct control robot ID
 
 #define RIGHT_V   0
 #define RIGHT_H   1
@@ -227,7 +227,8 @@ void setup(){
   msg.hdr1 = 0x55;
   msg.last = 0;
 
-  directMode = !digitalRead(BUT_RT) && !digitalRead(BUT_LT);
+  //directMode = !digitalRead(BUT_RT) && !digitalRead(BUT_LT);
+  directMode = 1;
   if(directMode) {
     Serial.println("Directly controlling robot ");
     sprintf(buf, "%d", robotID);
@@ -283,10 +284,9 @@ void directLoop(){
     else { countArray[COUNT_L5] = 0; buttonArray[COUNT_L5] = 0; }
     if(!digitalRead(BUT_L6) && !buttonArray[COUNT_L6]) countArray[COUNT_L6]++;
     else { countArray[COUNT_L6] = 0; buttonArray[COUNT_L6] = 0; }
-    if(!digitalRead(BUT_RT) && !buttonArray[COUNT_RT]) countArray[COUNT_RT]++;
-    else { countArray[COUNT_RT] = 0; buttonArray[COUNT_RT] = 0; }
-    if(!digitalRead(BUT_LT) && !buttonArray[COUNT_LT]) countArray[COUNT_LT]++;
-    else { countArray[COUNT_LT] = 0; buttonArray[COUNT_LT] = 0; }
+    
+    if(!digitalRead(BUT_RT)) buttons |= (1 << COUNT_RT);
+    if(!digitalRead(BUT_LT)) buttons |= (1 << COUNT_LT);
     
     type = TASK_MANUAL;
     
@@ -346,7 +346,7 @@ void directLoop(){
     uint8_t two;
     uint8_t three = 0;
     uint8_t four = buttons;
-    int d = (100-sticks[RIGHT_H]) * 0.5;
+    int d = (100-sticks[RIGHT_H]) * 0.3;
     int v = (100-sticks[LEFT_V]) * 0.5; 
     one = 100+max(-100, min(100, v+d));
     two = 100+max(-100, min(100, v-d));
