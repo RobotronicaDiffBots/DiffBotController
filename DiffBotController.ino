@@ -311,12 +311,12 @@ void directLoop(){
     } else {
       buttons &= ~(1 << COUNT_R3);
     }
-    if(countArray[COUNT_RT] > BUTTON_THRESHOLD) {
+    /*if(countArray[COUNT_RT] > BUTTON_THRESHOLD) {
       buttons |= (1 << COUNT_RT);
       buttonArray[COUNT_RT] = 1;
     } else {
       buttons &= ~(1 << COUNT_RT);
-    }
+    }*/
     if(countArray[COUNT_L4] > BUTTON_THRESHOLD) {
       buttons |= (1 << COUNT_L4);
       buttonArray[COUNT_L4] = 1;
@@ -335,12 +335,12 @@ void directLoop(){
     } else {
       buttons &= ~(1 << COUNT_L6);
     }
-    if(countArray[COUNT_LT] > BUTTON_THRESHOLD) {
+    /*if(countArray[COUNT_LT] > BUTTON_THRESHOLD) {
       buttons |= (1 << COUNT_LT);
       buttonArray[COUNT_LT] = 1;
     } else {
       buttons &= ~(1 << COUNT_LT);
-    }
+    }*/
     
     uint8_t one;
     uint8_t two;
