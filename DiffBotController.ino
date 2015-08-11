@@ -1,7 +1,7 @@
 #import <math.h>
 
-#define remoteID 3 //polled control remote ID
-#define robotID 33 //direct control robot ID
+#define remoteID 2 //polled control remote ID
+#define robotID 2 //direct control robot ID
 
 #define RIGHT_V   0
 #define RIGHT_H   1
@@ -101,103 +101,6 @@ uint8_t type = 0;       // direct control task enum
 uint8_t buttonArray[8] = {0}; //direct control debouncing
 uint8_t countArray[8] = {0};  //direct control debouncing
 
-uint8_t buttarr[8] = {BUT_R1, BUT_R2, BUT_R3, BUT_L4, BUT_L5, BUT_L6, BUT_RT, BUT_LT}; //button to bit map for polled button state packing
-radio_msg_t msg; //reusable message for reading polling requests into
-
-uint8_t waitflag = 0; //flag for wait mode when responding to poll messages
-uint32_t waitUntil; //time to wait until responding to a poll message
-uint8_t directMode; //1 for direct control, 0 for polling
- 
- 
-////////////////////////////////////////////////////////////////////////////////
-//Finally, some actual code
- 
-/*
- * Packet structure:
- * HDR0, HDR1, RID, SEQNO, CRC
- */
-int checkPacket() {
-  while (Serial.available() > 0) {
-    uint8_t crc = 0;
-    msg.next = Serial.read();
-    switch(msg.mode) {
-      case SYNC_0:
-        if (msg.next == 0xAA) msg.mode = SYNC_1;
-        break;
-      case SYNC_1:
-        if (msg.next == 0x55) msg.mode = REMOTE_ID;
-        else msg.mode = SYNC_0;
-        break;
-      case REMOTE_ID:
-        msg.id = msg.next;
-        if (msg.id == remoteID || msg.id == 250) msg.mode = CRC;
-        else msg.mode = SYNC_0;
-        break;
-      case CRC:
-        for (int i = 0; i < 3; i++) {
-          crc ^= ((uint8_t *)&msg)[i];
-        }
-        msg.mode = SYNC_0;
-        msg.crc = msg.next;
-        msg.last = crc == msg.crc ? millis() : msg.last;
-        return crc == msg.crc;
-      default:
-        break;
-    }
-  }
-  return 0;
-}
- 
-/*
- * Packet structure:
- * HDR0, HDR1, RID, RV, RH, LV, LH, BUTTONS, CRC
- * sticks in range 0 to 200 (really 1 to 199?), buttons as a combined structure in the order of
- * buttarr from lsv to msv
- */
-void respond() {
-   respond_msg_t outmsg;
-   uint8_t *p = (uint8_t *) &outmsg;
-   //Set up some response vars
- 
-   //Write the header bits
-   outmsg.hdr0 = 0xAA;
-   outmsg.hdr1 = 0x55;
-   outmsg.id = remoteID;
- 
-   //Write the analog sticks (0 to 200)
-   for (int i = 0; i < NUM_STICKS; i++) {
-      uint8_t stick;
-      if (i%2 == 0) {
-        stick = (1023-analogRead(i)) >> 2;
-        //stick = (1023-analogRead(i))/5.12;
-      }
-      else {
-        stick = analogRead(i) >> 2;
-        //stick = analogRead(i)/5.12;
-      }
-      if (stick > 90 && stick < 110) {
-        stick = 100;
-      }
-      p[3+i] = stick;
-    }
- 
-    //Write the buttons, in one big btye
-    outmsg.but = 0;
-    for (int i = 0; i < NUM_BUTTONS; i++) {
-      outmsg.but |= !digitalRead(buttarr[i]) << i;
-    }
-  
-    //Write the checksum, and we're done
-    outmsg.crc = 0;
-    for (uint8_t i = 0; i < sizeof(respond_msg_t)-1; i++) {
-      outmsg.crc ^= p[i];
-    }
- 
-    for (uint8_t i = 0; i < sizeof(respond_msg_t); i++) {
-      Serial.write(p[i]);
-    }
-}
- 
 void setup(){
   char buf[3] = {0};
   Serial.begin(57600);
@@ -221,42 +124,9 @@ void setup(){
   digitalWrite(BUT_LEFT, HIGH);
  
   digitalWrite(USER, LOW);
- 
-  //Set up the message
-  msg.hdr0 = 0xAA;
-  msg.hdr1 = 0x55;
-  msg.last = 0;
-
-  //directMode = !digitalRead(BUT_RT) && !digitalRead(BUT_LT);
-  directMode = 1;
-  if(directMode) {
-    Serial.println("Directly controlling robot ");
-    sprintf(buf, "%d", robotID);
-    Serial.println(buf);
-  } else {
-    Serial.println("Polling");
-  }
 }
 
-void pollingLoop(){
-  if (waitflag) {
-    if (micros() <= waitUntil || micros()-waitUntil > 0xFFFFFF)
-      return;
-      
-    respond();
-    waitflag = 0;
-  }
-    
-  if(checkPacket()) {
-    waitflag = 1;
-    waitUntil = micros()+5000;
-  }
-  
-  //Set the output pin to "are we connected?". Bright means yes.
-  digitalWrite(USER, millis() - msg.last < TIMEOUT);
-}
-
-void directLoop(){
+void loop(){
   
     for (int i = 0; i < 4; i++) {
       if (i%2 == 0) {
@@ -344,7 +214,7 @@ void directLoop(){
     
     uint8_t one;
     uint8_t two;
-    uint8_t three = 0;
+    uint8_t three = remoteID;
     uint8_t four = buttons;
     int d = (100-sticks[RIGHT_H]) * 0.3;
     int v = (100-sticks[LEFT_V]) * 0.5; 
@@ -383,10 +253,6 @@ void directLoop(){
     
     delay(100-(millis() - rtime));
     rtime = millis();
-}
-
-void loop() {
-  if(directMode) directLoop(); else pollingLoop();
 }
 
 /* Revisions 
