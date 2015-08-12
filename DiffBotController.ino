@@ -56,12 +56,10 @@ enum {
 
 enum {
   TASK_IDLE = 0,  //Robot stops (0 params)
-  TASK_MANUAL,  //Controls the motors directly (2 params, lmotor and rmotor (0 to 200, 100 is idle))
-  TASK_SPIN,  //Spins on the spot (4 params, direction (0 or 1), speed (0 to 100), time (ms, split into two parts))
-  TASK_LED, //Sets the LED status of the top LEDs. (4 params, R, G, B, ledno (0, 1, 255))
-  TASK_STOP,
-  TASK_DRIVE,
-  TASK_BRAKE = 250, //Stops. (0 params)
+  TASK_MANUAL = 1,  //Controls the motors directly (2 params, lmotor and rmotor (0 to 200, 100 is idle))
+  TASK_SPIN = 2,  //Spins on the spot (4 params, direction (0 or 1), speed (0 to 100), time (ms, split into two parts))
+  TASK_STOP = 4,
+  TASK_DRIVE = 5,
   PING = 255  //A 'keep alive' type message, just to avoid timeout (0 params)
 };
  
